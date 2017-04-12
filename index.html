@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GO_THINK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:5px solid #000000;
+    background-color: #ffffff;
+}
+</style>
+<script>
+var num_inputs = 9;
+var num_hidden = 18;
+var num_outputs = 1;
+var width = 480;
+var height = 300;
+var num_rovers = 20;
+
+function getRandomInt(min,max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function getRandomFloat(min,max) {
+    return 0.0 + (Math.random() * (max - min )) + min;
+}
+
+</script>
+<script src='ga.js'></script>
+<script src='nn.js'></script>
+
+
+<script src='rover.js'></script>
+
+<script src='food.js'></script>
+<script>
+var canvas
+var episode_knt = 0;
+var pause = false;
+
+foods = [];
+var num_foods = 40;
+
+rovers = [];
+genomes = [];
+brains = [];
+
+function startGame() {
+     pause = false;
+     make_genomes(num_rovers);
+     make_foods(num_foods);
+     make_brains(num_rovers);
+     make_rovers(num_rovers);
+     myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        var millis = 50;  //game intervale milliseconds
+        console.log('gamearea genomes ',genomes);
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea, millis);
+    },
+    stop : function() {
+        pause = true;
+        console.log("STOP !!! ");
+        clearInterval(this.interval);
+    },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.context.fillStyle = "rgba(255,255,255,255)";
+        this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
+    }
+}
+function updateGameArea() {
+    //if (pause) {
+     //  return;
+    //}
+    //console.log('episode_knt: ',episode_knt);
+
+    if (episode_knt >=  400) {
+       console.log("NEW EPISODE !!");
+       episode_knt = 0;
+       select_genomes();
+       mutate_genomes();
+       make_new_weights();
+       reset_rover_positions();
+       reset_food_positions();
+    } //end of if on episode_knt
+    myGameArea.clear();
+    update_rovers();
+    update_foods();
+    episode_knt+= 1;
+} //end of updateGameArea
+</script>
+</head>
+<body onload="startGame()">
+<center>
+<button onclick="javascript:myGameArea.stop()">stop</button>
+<button onclick="javascript:myGameArea.start()">start</button>
+</center>
+<p>
+Open up your javascript console to get info.
+<p>
+I run it on Chrome.
+<p>
+Server.go is a simple go web server.<br>
+Use whatever web server you want.
+<p>
+Let it run for a few hours. Eventually the red things<br>
+won't go to the wall...At least not too much. And the 'SUM REWARDS'<br>
+in the console window should slowly increase
+<p>
+Essentially this is a genetic algorithm that supplies the<br>
+weights to a 3 layer neural net (input,hidden,output). <br>
+The neural net is only feed-forward. No back propagation.<br>
+The output layer of the neural net hopefully gives a result from 0 to 1.<br>
+This is then multiplied by 2*PI to get a direction angle in radians<br>
+<p>
+Everything is inside the browser. Next I will try to put the<br>
+GA and the NN in a separate process and communicate via websockets.<br>
+If it isn't too slow.<br>
+
+</body>
+</html>
+
