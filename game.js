@@ -6,6 +6,7 @@ function WebsocketStart() {
     ws.onopen = function(evt) {
       senddata('CONNECTION MADE');
       setup();
+      myGameArea.start(); 
     }
     ws.onclose = function(evt) {
       console.log('WEBSOCKET CLOSE');
@@ -31,7 +32,6 @@ senddata = function(data) {
         return false;
     }
     stuff = JSON.stringify(data);
-    console.log('sending ',stuff);
     ws.send(stuff);
 } //end of function senddata
 
@@ -50,7 +50,6 @@ function setup() {
 } //end of setup
 
 function updateGameArea() {
-    console.log('updateGameArea episode_knt = ',episode_knt);
     if (episode_knt >= 10) {
        mydata = {};
        mydata['num_episodes'] =  num_episodes;
@@ -67,7 +66,6 @@ console.log('before reset rover');
     update_rovers(red_team,red_rovers);
     update_rovers(blue_team,blue_rovers);
     update_foods();
-    console.log('AFTER UPDATE FOODS');
     episode_knt+= 1;
 } //end of updateGameArea
 
@@ -82,7 +80,7 @@ myGameArea = {
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         pause = false;
         console.log('before interval millis ',this.millis);
-        //this.interval = setInterval(updateGameArea,this.millis);
+        this.interval = setInterval(updateGameArea,this.millis);
         console.log('interval is ',this.interval);
     },  
     stop : function() {
