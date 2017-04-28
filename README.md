@@ -2,6 +2,8 @@
 This is a variant of the 'think' repository. It has a go backend where every genome has
 a concurrent neural network.
 
+It stil is not working... A few more days ... 
+
 April 28,2017 - Finally figured out unmarshalling. Threw all the setup
 code into the 'onopen' for the websocket. 
 
