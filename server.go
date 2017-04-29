@@ -10,9 +10,11 @@ import (
 	"flag"
 	"log"
         "fmt"
+        "sort"
 	"net/http"
         "strings"
         "math/rand"
+        "math"
         "encoding/json"
 	"github.com/gorilla/websocket"
 )
@@ -20,9 +22,15 @@ import (
 type Update_record struct {
     Color     string
     Id        int
-    State     []int
+    Reward    int
+    State     []float32
 }
 
+type Angle_record struct {
+    Color     string
+    Id        int
+    Angle     float32
+}
 type Team struct {
     Team_name string
     Color       string
@@ -56,6 +64,53 @@ var upgrader = websocket.Upgrader{
     },
 }
 
+func think(update_record Update_record) float32 {
+    team := red_team
+    if update_record.Color == "blue" {
+       team = blue_team
+    }
+    team.Rovers[update_record.Id].Score += update_record.Reward
+    var input_layer []float32
+    var pi float32 
+    input_layer = update_record.State
+    var ihws  [][]float32
+
+    ihws = team.Rovers[update_record.Id].Input_hidden_weights
+    hidden_layer := make_layer(input_layer,ihws)
+
+    var hows  [][]float32
+    hows = team.Rovers[update_record.Id].Hidden_output_weights
+    output_layer := make_layer(hidden_layer,hows)
+
+
+    pi = float32(math.Pi)
+    new_angle := output_layer[0] * pi * 2.0
+    return new_angle 
+} //end of think
+
+func make_layer(from_layer []float32,from_to_weight_matrix [][]float32) []float32 {
+      //from layer is 1 x c
+      //from_to_weight_matrix is c x x
+      //new_layer is 1 x x
+
+      var new_layer []float32
+      to_len := len(from_to_weight_matrix[0])
+      from_len := len(from_layer)
+
+      var sum float32
+      
+      for ia:=0;ia<to_len;ia++  {
+            sum = 0.0
+            for jb :=0;jb <from_len;jb++ {
+                sum += from_layer[jb] * from_to_weight_matrix[jb][ia]
+            }
+            fff :=  1.0/(1.0+math.Exp(-1.0*float64(sum)))
+            new_layer =  append(new_layer,float32(fff))
+        } //end of loop on i
+        return new_layer
+} //end of make_layer
+
+
 func getRandomFloat32(min float32,max float32) float32{
     return 0.0 + (rand.Float32() * (max-min)) + min
 }
@@ -65,59 +120,158 @@ func getRandomInt(min int,max int) int{
 }
 
 func select_genomes(team Team) {
-    fmt.Println("in select team color is ",team.Color)
-}
+    scores := make(map[int]int)
+    for ir:=0;ir<team.Num_rovers;ir++ {
+        scores[ir] = team.Rovers[ir].Score
+        team.Rovers[ir].Score = 0
+    }
 
+    var rindex []int;
+    var new_rovers []Rover
+
+    for _, res := range sortedKeys(scores) {
+                rindex = append(rindex,res)
+    } //end of loop on res
+fmt.Println("RINDEX IS ",rindex)
+
+    //keep top 2
+    spot:= 2
+    for irk:=0;irk<team.Num_rovers;irk++ {
+        iz := rindex[irk]
+        rover = team.Rovers[iz]
+        rover.Score = 0
+        new_rovers = append(new_rovers,rover)
+    }
+
+
+    for irk1 :=spot;irk1<team.Num_rovers;irk1++ {
+        i1 := getRandomInt(0,5)
+        i2 := getRandomInt(0,team.Num_rovers)
+        var s2 []float32
+        s2 = crossover(team.Rovers[i1].Genome,team.Rovers[i2].Genome)
+        new_rovers[irk1].Genome = s2
+    } //end of lop on num_rovers
+
+
+    team.Rovers = new_rovers
+
+} //end of select
+
+
+func crossover(g1 []float32,g2[]float32) ([]float32) {
+
+    cspot := len(g1)/2
+
+    var c1 []float32
+    var c2 []float32
+    c1a := g1[0:cspot]
+    c1b := g1[cspot]
+    c2a := g2[0:cspot]
+    c2b := g2[cspot]
+    c1 = append(c1a,c2b)
+    c2 = append(c2a,c1b)
+    duh := rand.Float32()
+    if duh < .5 {
+
+        return c1
+    } 
+    return c2
+} //end of crossover
+ 
 func mutate_genomes(team Team) {
-    fmt.Println("in mutate team color is ",team.Color)
-}
+    for im:=2;im<team.Num_rovers;im++ {
+        //everybody but top 2 get mutation Rovers 0 just to get a length
+        mspot := getRandomInt(0,len(team.Rovers[0].Genome))
+        team.Rovers[im].Genome[mspot] = getRandomFloat32(-2.0,2.0)
+    } //end of loop on num_roers
+} //end of mutate func
 
 func make_new_weights(team Team) {
     fmt.Println("in make_new_weights team color is ",team.Color)
+ 
+    for i := 0; i< team.Num_rovers; i++ {
+        team.Rovers[i].Input_hidden_weights = 
+                  make_weight_matrix(team.Rovers[i].Genome,0,team.Num_inputs,team.Num_hidden)
+        index :=  team.Num_inputs * team.Num_hidden
+        team.Rovers[i].Hidden_output_weights = 
+           make_weight_matrix(team.Rovers[i].Genome,index,team.Num_hidden,team.Num_outputs)
+    } //end of for loop on num_rovers
+} //end of make_new_weights 
+
+type sortedMap struct {
+	m map[int]int
+	s []int
 }
 
-func make_weight_matrix(genome []float32,from_length int,to_length int) [][]float32 {
+func (sm *sortedMap) Len() int {
+	return len(sm.m)
+}
 
-    kspot:= 0
+func (sm *sortedMap) Less(i, j int) bool {
+	return sm.m[sm.s[i]] > sm.m[sm.s[j]]
+}
+
+func (sm *sortedMap) Swap(i, j int) {
+	sm.s[i], sm.s[j] = sm.s[j], sm.s[i]
+}
+
+func sortedKeys(m map[int]int) []int {
+	sm := new(sortedMap)
+	sm.m = m
+	sm.s = make([]int, len(m))
+	i := 0
+	for key, _ := range m {
+		sm.s[i] = key
+		i++
+	}
+	sort.Sort(sm)
+	return sm.s
+}
+
+
+func make_weight_matrix(genome []float32,start_index int,from_size int,to_size int) [][]float32 {
+
+
+    kspot:= start_index
     var new_mat [][]float32
-    for ii:=0;ii<from_length;ii++ {
-        junk :=make([]float32,to_length)
-
-        for jj:=0;jj<to_length;jj++ {
-            junk[jj] = genome[kspot]
+    for ii:=start_index;ii<(start_index+from_size);ii++ {
+        var junk []float32
+        for jj:=0;jj<to_size;jj++ {
+            junk = append(junk,genome[kspot])
             kspot++
         } //end of loop on jj
         new_mat = append(new_mat,junk)
     } //end of loop on from length
+
     return new_mat
 } //end of make_weight_matrix
 
-func make_rovers(team Team) {
-    fmt.Println("in make_rovers")
-    fmt.Println("team name ",team.Team_name);
+func make_rovers(team Team) []Rover {
+
     length_of_genome := team.Num_inputs*team.Num_hidden 
     length_of_genome += team.Num_hidden*team.Num_outputs
-    fmt.Println("Lenght GENOME ",length_of_genome);
+    var rovers []Rover
 
     for i := 0; i< team.Num_rovers; i++ {
         var rover Rover
-        //rover.Genome = []float32
-        for j:=0;j<length_of_genome;j++ {
-          rover.Genome[j] =  getRandomFloat32(-2.0,2.0)
-        } //end of loop on length of genome
-      
-        to := team.Num_inputs * team.Num_hidden
-        g:= rover.Genome[0:to]
-        rover.Input_hidden_weights = make_weight_matrix(g,0,to)
+        var genome []float32
 
-        from := to
-        to = to + team.Num_hidden * team.Num_outputs
-        g = rover.Genome[from:to]
+        for j:=0;j<length_of_genome;j++ {
+          genome =  append(genome,getRandomFloat32(-2.0,2.0))
+        } //end of loop on length of genome
+        rover.Genome = genome
+ 
+        rover.Input_hidden_weights = 
+                  make_weight_matrix(rover.Genome,0,team.Num_inputs,team.Num_hidden)
+        index :=  team.Num_inputs * team.Num_hidden
         rover.Hidden_output_weights = 
-           make_weight_matrix(g,from,to)
+           make_weight_matrix(rover.Genome,index,team.Num_hidden,team.Num_outputs)
         rover.Score = 0
-        team.Rovers= append(team.Rovers,rover)
+        rovers = append(rovers,rover)
+
+
     } //end of for loop on num_rovers
+   return rovers
 } //end of make_rovers
 
 func talk(w http.ResponseWriter, r *http.Request) {
@@ -144,16 +298,16 @@ func talk(w http.ResponseWriter, r *http.Request) {
                    if jerr != nil {
                       fmt.Println("error on redteam unmarshal")
                    } //end of if on jerr
-                   make_rovers(red_team)
+                   red_team.Rovers = make_rovers(red_team)
+
                 }  //end of if on red
 
                 if strings.Contains(junk,"blue_team") {
-                   fmt.Println("BLUE TEAM!!");
                    jerr := json.Unmarshal(message,&blue_team)
                    if jerr != nil {
                       fmt.Println("error on blueteam unmarshal")
                    } //end of if on jerr
-                   make_rovers(blue_team)
+                   blue_team.Rovers = make_rovers(blue_team)
 
                 }  //end of if on blue 
 
@@ -162,9 +316,22 @@ func talk(w http.ResponseWriter, r *http.Request) {
                    if jerr != nil {
                       fmt.Println("error on update unmarshal")
                    } //end of if on jerr
-                   //fmt.Println("update: ",update_record.Color)
-                   //fmt.Println("update: ",update_record.Id)
-                   //fmt.Println("update: ",update_record.State)
+                  
+                   var angle_record Angle_record
+                   angle_record.Angle = think(update_record)
+                   angle_record.Color = update_record.Color
+                   angle_record.Id = update_record.Id
+
+                   message,err = json.Marshal(angle_record)
+                   if err != nil {
+                      fmt.Println("bad angle Marshal")
+                   }
+                   
+                   err = c.WriteMessage(mt, message)
+                   if err != nil {
+                        log.Println("angle write:", err)
+                        break
+                   } //end of if on write
                 }  //end of if on state 
 
                 if strings.Contains(junk,"num_episodes") {

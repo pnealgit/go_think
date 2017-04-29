@@ -24,10 +24,10 @@ table, th, td {
 
 var episode_knt = 0;
 var num_episodes = 0;
-var num_rovers = 10;
+var num_rovers = 15;
 var num_inputs = 9;
 var red_num_hidden = 18;
-var blue_num_hidden = 4;
+var blue_num_hidden = 27;
 var num_outputs = 1;
 var pause = false;
 
@@ -57,9 +57,14 @@ function startGame() {
 </head>
 <body onload="startGame()">
 <p>
+<center>
+<button onclick="javascript:myGameArea.stop()">stop</button>
+<button onclick="javascript:myGameArea.start()">start</button>
+<p>
 <div id = 'comms' align='left' style="height:120px;width:400px;border:1px solid #ccc; font:12px/16px
 Georgia,Garamond,Serif;overflow:auto;">
 </div>
+</center>
 </body>
 </html>
 

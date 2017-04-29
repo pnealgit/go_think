@@ -15,6 +15,11 @@ Things to do:
 4. Get the mutation working on the Go side
 5. Get the 'Think' working that sends back the angle to the rover.
 
+April 29,2017 - Ok. Got everything working. At least I get an 'angle' back.
+
+Things to do:
+
+1. Get a line graph going to compare sum of rewards at each epoch
 
 
 

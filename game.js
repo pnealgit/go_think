@@ -15,10 +15,19 @@ function WebsocketStart() {
     }
 
     ws.onmessage = function(e) {
-        if (e.data.indexOf('angle') != -1 ) {
-            console.log('ANGLE -- emessage on message ',e.data);
-        }
-    }
+      //console.log('MESSAGE -- ',e.data);
+      n = e.data.indexOf("Angle");
+      if (n != -1 ) {
+         var response = JSON.parse(e.data)
+
+         if (response.Color == "red") {
+             red_rovers[response.Id].angle = response.Angle;
+         } else {
+             blue_rovers[response.Id].angle = response.Angle;
+         }
+      } //end of found 'angle'
+    } //endo of onmessage
+
 
     ws.onerror = function(evt) {
         console.log('onerror ',evt.data);
@@ -50,13 +59,12 @@ function setup() {
 } //end of setup
 
 function updateGameArea() {
-    if (episode_knt >= 10) {
+    if (episode_knt >= 150) {
        mydata = {};
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);
        num_episodes++;
        episode_knt = 0;
-console.log('before reset rover');
        reset_rover_positions(red_rovers);
        reset_rover_positions(blue_rovers);
        reset_food_positions();
@@ -73,7 +81,7 @@ myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
         console.log('in game area start');
-        this.millis = 150;  //game intervale milliseconds
+        this.millis = 50;  //game intervale milliseconds
         this.canvas.width = width;
         this.canvas.height = height;
         this.context = this.canvas.getContext("2d");
@@ -86,6 +94,7 @@ myGameArea = {
     stop : function() {
         pause = true; 
         console.log("STOP !!! ");
+alert("STOPPPPPP")
         clearInterval(this.interval);
         ws.close();
     },  

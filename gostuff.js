@@ -138,11 +138,11 @@ function update_rovers(team,rovers) {
        my_data['color'] = team.color;
        my_data['id'] = i;
        my_data['state'] = rovers[i].state;
-
-       senddata(my_data);
-       rovers[i].angle = 3.33; //change this in onmessage
-       rovers[i].move();
        rrr = rovers[i].get_reward(rovers);
+       my_data['reward'] = rrr;
+       senddata(my_data);
+       rovers[i].move();
+       rovers[i].reward = rrr;
        rovers[i].draw(team.color);
    } //end of loop on rovers
 } //end of function 
