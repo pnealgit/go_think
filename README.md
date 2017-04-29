@@ -21,6 +21,7 @@ Things to do:
 
 1. Get a line graph going to compare sum of rewards at each epoch
 
+OOOPS !! Sort is fucked up. Gotta fix that ...grr - hate select and crossover
 
 
 

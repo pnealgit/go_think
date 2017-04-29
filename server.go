@@ -69,6 +69,8 @@ func think(update_record Update_record) float32 {
     if update_record.Color == "blue" {
        team = blue_team
     }
+    //fmt.Println("raw reward ",update_record.Reward)
+
     team.Rovers[update_record.Id].Score += update_record.Reward
     var input_layer []float32
     var pi float32 
@@ -121,46 +123,41 @@ func getRandomInt(min int,max int) int{
 
 func select_genomes(team Team) {
     scores := make(map[int]int)
+    sum := 0
     for ir:=0;ir<team.Num_rovers;ir++ {
         scores[ir] = team.Rovers[ir].Score
-        team.Rovers[ir].Score = 0
+        sum+= team.Rovers[ir].Score
+        //team.Rovers[ir].Score = 0
     }
+    fmt.Println(team.Team_name," sum ",sum)
 
-    var rindex []int;
-    var new_rovers []Rover
+fmt.Println("DOING SORT")
 
-    for _, res := range sortedKeys(scores) {
-                rindex = append(rindex,res)
-    } //end of loop on res
-fmt.Println("RINDEX IS ",rindex)
+sort.Sort(ScoreSorter(team.Rovers))
+for isk:=0;isk<team.Num_rovers;isk++ {
+    fmt.Println(isk,team.Rovers[isk].Score)
+}
 
-    //keep top 2
-    spot:= 2
-    for irk:=0;irk<team.Num_rovers;irk++ {
-        iz := rindex[irk]
-        rover = team.Rovers[iz]
-        rover.Score = 0
-        new_rovers = append(new_rovers,rover)
+//fuck it . Lets get somehting working....
+    spot :=4
+    for isk:=spot; isk< team.Num_rovers;isk++ {
+        i1 := getRandomInt(0,spot)
+        team.Rovers[isk].Genome = team.Rovers[i1].Genome
     }
-
-
-    for irk1 :=spot;irk1<team.Num_rovers;irk1++ {
-        i1 := getRandomInt(0,5)
-        i2 := getRandomInt(0,team.Num_rovers)
-        var s2 []float32
-        s2 = crossover(team.Rovers[i1].Genome,team.Rovers[i2].Genome)
-        new_rovers[irk1].Genome = s2
-    } //end of lop on num_rovers
-
-
-    team.Rovers = new_rovers
+    
+    for isk:=0; isk< team.Num_rovers;isk++ {
+       team.Rovers[isk].Score = 0
+    }
 
 } //end of select
 
 
 func crossover(g1 []float32,g2[]float32) ([]float32) {
+fmt.Println("\nin crossover g1 = ",g1)
 
     cspot := len(g1)/2
+
+fmt.Println("in crossover cspot",cspot)
 
     var c1 []float32
     var c2 []float32
@@ -172,9 +169,10 @@ func crossover(g1 []float32,g2[]float32) ([]float32) {
     c2 = append(c2a,c1b)
     duh := rand.Float32()
     if duh < .5 {
-
+fmt.Println("leavng c1 ",c1);
         return c1
     } 
+fmt.Println("leavng c2 ",c2);
     return c2
 } //end of crossover
  
@@ -198,39 +196,16 @@ func make_new_weights(team Team) {
     } //end of for loop on num_rovers
 } //end of make_new_weights 
 
-type sortedMap struct {
-	m map[int]int
-	s []int
-}
+// ScoreSorter sorts rovers by score
+type ScoreSorter []Rover
 
-func (sm *sortedMap) Len() int {
-	return len(sm.m)
-}
+func (a ScoreSorter) Len() int           { return len(a) }
+func (a ScoreSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ScoreSorter) Less(i, j int) bool { return a[i].Score > a[j].Score }
 
-func (sm *sortedMap) Less(i, j int) bool {
-	return sm.m[sm.s[i]] > sm.m[sm.s[j]]
-}
-
-func (sm *sortedMap) Swap(i, j int) {
-	sm.s[i], sm.s[j] = sm.s[j], sm.s[i]
-}
-
-func sortedKeys(m map[int]int) []int {
-	sm := new(sortedMap)
-	sm.m = m
-	sm.s = make([]int, len(m))
-	i := 0
-	for key, _ := range m {
-		sm.s[i] = key
-		i++
-	}
-	sort.Sort(sm)
-	return sm.s
-}
 
 
 func make_weight_matrix(genome []float32,start_index int,from_size int,to_size int) [][]float32 {
-
 
     kspot:= start_index
     var new_mat [][]float32

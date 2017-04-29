@@ -59,14 +59,15 @@ function setup() {
 } //end of setup
 
 function updateGameArea() {
-    if (episode_knt >= 150) {
+    if (episode_knt >= 200) {
        mydata = {};
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);
        num_episodes++;
        episode_knt = 0;
-       reset_rover_positions(red_rovers);
-       reset_rover_positions(blue_rovers);
+       red_sum = reset_rover_positions(red_rovers);
+       blue_sum = reset_rover_positions(blue_rovers);
+       console.log("red sum: ",red_sum, "blue sum: ",blue_sum);
        reset_food_positions();
     } //end of if on episode_knt
 
