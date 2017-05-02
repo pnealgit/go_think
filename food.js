@@ -12,10 +12,12 @@ function update_foods() {
 }
  
 function Food(x,y) {
-    this.x = getRandomInt(50,myGameArea.canvas.width-50);
-    this.y = getRandomInt(50,myGameArea.canvas.height-50);
+
+    this.x = x;
+    this.y = y;
     this.r = 15;
     this.color = 'green';
+
     this.update = function() {
         ctx = myGameArea.context;
         ctx.beginPath();
@@ -28,20 +30,52 @@ function Food(x,y) {
      } //end of food update
 
     this.reset_position = function() {
-        lox = 50;
-        hix = Math.floor(myGameArea.canvas.width-50);
-        this.x = getRandomInt(lox,hix);
-        loy = 50;
-        hiy = Math.floor(myGameArea.canvas.height-50);
-        this.y = getRandomInt(loy,hiy);
-    }
-
+      //this.x = start + (ix*deltax);
+      //this.y = start + (iy*deltay);
+      //this.r = 15;
+    } //end of reset
 
 } //end of food function  
 
+Food.prototype.make_food_cells = function (num_foods) {
+    //this will fall apart depending on 
+    // num foods and size of window
+    for(var ixc = 0;ixc<10;ixc++) {
+        cc = []; 
+        for(var ixy = 0;ixy<10;ixy++) {
+          cc[ixy] = false;
+        }
+        this.food_cells[ixc] = cc;
+    }
+    console.log('food cells', this.food_cells);
+
+} //end of make_food_cells
+    
+num_foods = 40;
+ 
 function make_foods(num_foods) {
-    for(i = 0;i<num_foods;i++) {
-        foods[i] = new Food(i*50,i*40);
+ 
+    x = 0;
+    y = 0;
+     
+    w = width;
+    h = height;
+    //divide area into 40 cells and put a food 
+    // in the middle of each  cell up to the limit of numfoods
+    r = 15; //radius of food
+    start = (2*r)+10; //adjust for radius of food
+    deltax = (w-start) /8;
+    deltay = (h-start) /5;
+    console.log('w,h,dx,dy',w,h,deltax,deltay);
+ 
+    fknt = 0;
+    for(ix = 0;ix<8;ix++) {
+    px = start + (ix*deltax);
+    for(iy = 0;iy<5;iy++) {
+      py = start + (iy*deltay);
+      foods[fknt] = new Food(px,py);
+      fknt++;
+    }
     }
 }//end of function make_foods
 
