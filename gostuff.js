@@ -23,7 +23,6 @@ function Rover(id) {
     lox = Math.floor(30);
     hix = Math.floor(width-30);
     this.x = getRandomInt(lox,hix);
-
     loy = Math.floor(30);
     hiy = Math.floor(height-30);
     this.y = getRandomInt(loy,hiy);
@@ -65,32 +64,11 @@ function Rover(id) {
           this.epys[s]  = this.y + y2
           ctx.lineTo(this.epxs[s],this.epys[s])
         } //end of loop on sensors
-
-
         ctx.stroke();
         ctx.closePath();
      } //end of rover draw
 
 } //end of Rover function
-
-
-
-
-
-
-function getSortedKeys(obj) {
-        var keys = []; for(var key in obj) keys.push(key);
-        return keys.sort(function(a,b){return obj[b]-obj[a]});
-}
-
-function mutate_genomes() {
-     //skip very best ... if i did the select right
-     for(var ik=2;ik<this.num_rovers;ik++) {
-         spot = getRandomInt(0,this.gl);
-         new_weight = getRandomFloat(-2,2);
-         this.genomes[ik][spot] = new_weight;
-     } //end of loop on new_rovers
-} //end of function
 
 Rover.prototype.get_sensor_data= function() {
       this.state = [0,0,0,0,0,0,0,0,0];
@@ -141,13 +119,12 @@ function update_rovers(team,rovers) {
        rrr = rovers[i].get_reward(rovers);
        my_data['reward'] = rrr;
        senddata(my_data);
+       rovers[i].reward += rrr;
        rovers[i].move();
-       rovers[i].reward = rrr;
        rovers[i].draw(team.color);
    } //end of loop on rovers
 } //end of function 
 
- 
 Rover.prototype.get_reward = function(rvrs) {
         //food
         no_change = true;
@@ -156,7 +133,7 @@ Rover.prototype.get_reward = function(rvrs) {
            dist = Math.hypot((foods[ij].x-this.x),(foods[ij].y-this.y));
            test = foods[ij].r + this.r;
            if (dist <= test) {
-                new_reward += 4;
+                new_reward += 1;
                 no_change = false;
            } //end of if
          } //end of loop on food
@@ -164,7 +141,7 @@ Rover.prototype.get_reward = function(rvrs) {
        //now for borders
        if (this.x > myGameArea.canvas.width-5 || this.x < 5) {
          if( this.velocity > 0.0) {
-           this.reward += -1;
+           new_reward += -1;
            no_change = false;
            this.velocity = 0.0;
          }
@@ -179,8 +156,6 @@ Rover.prototype.get_reward = function(rvrs) {
 
       for (ir = 0;ir<num_rovers;ir++) {
          if (ir != this.id) {
-//console.log('ir',ir, 'id ',this.id);
-
            dist = Math.hypot((rvrs[ir].x-this.x),(rvrs[ir].y-this.y));
            test = rvrs[ir].r + this.r;
            if (dist <= test) {
@@ -198,9 +173,13 @@ Rover.prototype.get_reward = function(rvrs) {
 
    
 function reset_rover_positions(rovers) {
+   sum = 0;
    for(var nn=0; nn <num_rovers;nn++) {
+         sum+= rovers[nn].reward;
          rovers[nn].reset_position();
+         rovers[nn].reward = 0;
    } //end of loop
+   return sum;
 }
 
  

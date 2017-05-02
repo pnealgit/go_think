@@ -122,27 +122,21 @@ func getRandomInt(min int,max int) int{
 }
 
 func select_genomes(team Team) {
-    scores := make(map[int]int)
     sum := 0
     for ir:=0;ir<team.Num_rovers;ir++ {
-        scores[ir] = team.Rovers[ir].Score
         sum+= team.Rovers[ir].Score
-        //team.Rovers[ir].Score = 0
     }
     fmt.Println(team.Team_name," sum ",sum)
 
-fmt.Println("DOING SORT")
+    sort.Sort(ScoreSorter(team.Rovers))
 
-sort.Sort(ScoreSorter(team.Rovers))
-for isk:=0;isk<team.Num_rovers;isk++ {
-    fmt.Println(isk,team.Rovers[isk].Score)
-}
-
-//fuck it . Lets get somehting working....
     spot :=4
     for isk:=spot; isk< team.Num_rovers;isk++ {
+        var new_genome  []float32
         i1 := getRandomInt(0,spot)
-        team.Rovers[isk].Genome = team.Rovers[i1].Genome
+        i2 := getRandomInt(0,team.Num_rovers)
+        new_genome = crossover(team.Rovers[i1].Genome,team.Rovers[i2].Genome)
+        team.Rovers[isk].Genome = new_genome
     }
     
     for isk:=0; isk< team.Num_rovers;isk++ {
@@ -151,28 +145,22 @@ for isk:=0;isk<team.Num_rovers;isk++ {
 
 } //end of select
 
-
 func crossover(g1 []float32,g2[]float32) ([]float32) {
-fmt.Println("\nin crossover g1 = ",g1)
-
     cspot := len(g1)/2
-
-fmt.Println("in crossover cspot",cspot)
-
     var c1 []float32
     var c2 []float32
     c1a := g1[0:cspot]
-    c1b := g1[cspot]
+    c1b := g1[cspot:]
     c2a := g2[0:cspot]
-    c2b := g2[cspot]
-    c1 = append(c1a,c2b)
-    c2 = append(c2a,c1b)
+    c2b := g2[cspot:]
+    c1 = append(c1,c1a...)
+    c1 = append(c1,c1b...)
+    c2 = append(c2,c2a...)
+    c2 = append(c2,c2b...)
     duh := rand.Float32()
     if duh < .5 {
-fmt.Println("leavng c1 ",c1);
         return c1
     } 
-fmt.Println("leavng c2 ",c2);
     return c2
 } //end of crossover
  
@@ -185,11 +173,11 @@ func mutate_genomes(team Team) {
 } //end of mutate func
 
 func make_new_weights(team Team) {
-    fmt.Println("in make_new_weights team color is ",team.Color)
- 
+   
     for i := 0; i< team.Num_rovers; i++ {
-        team.Rovers[i].Input_hidden_weights = 
-                  make_weight_matrix(team.Rovers[i].Genome,0,team.Num_inputs,team.Num_hidden)
+        var new_weights [][]float32
+        new_weights = make_weight_matrix(team.Rovers[i].Genome,0,team.Num_inputs,team.Num_hidden)
+        team.Rovers[i].Input_hidden_weights = new_weights
         index :=  team.Num_inputs * team.Num_hidden
         team.Rovers[i].Hidden_output_weights = 
            make_weight_matrix(team.Rovers[i].Genome,index,team.Num_hidden,team.Num_outputs)

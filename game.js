@@ -11,7 +11,7 @@ function WebsocketStart() {
     ws.onclose = function(evt) {
       console.log('WEBSOCKET CLOSE');
       myGameArea.stop();
-      ws = null;
+      //ws = null;
     }
 
     ws.onmessage = function(e) {
@@ -36,6 +36,9 @@ function WebsocketStart() {
 } //end of WebsocketStart
 
 senddata = function(data) {
+    if (pause) {
+      return;
+    }
     if (!ws) {
         console.log('cannot send data -- no ws');
         return false;
@@ -59,14 +62,14 @@ function setup() {
 } //end of setup
 
 function updateGameArea() {
-    if (episode_knt >= 200) {
+    if (episode_knt >= 300) {
        mydata = {};
+       red_sum = reset_rover_positions(red_rovers);
+       blue_sum = reset_rover_positions(blue_rovers);
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);
        num_episodes++;
        episode_knt = 0;
-       red_sum = reset_rover_positions(red_rovers);
-       blue_sum = reset_rover_positions(blue_rovers);
        console.log("red sum: ",red_sum, "blue sum: ",blue_sum);
        reset_food_positions();
     } //end of if on episode_knt
@@ -88,16 +91,13 @@ myGameArea = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         pause = false;
-        console.log('before interval millis ',this.millis);
         this.interval = setInterval(updateGameArea,this.millis);
-        console.log('interval is ',this.interval);
     },  
     stop : function() {
         pause = true; 
         console.log("STOP !!! ");
-alert("STOPPPPPP")
         clearInterval(this.interval);
-        ws.close();
+        //ws.close();
     },  
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
