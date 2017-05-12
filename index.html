@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <style>
 canvas {
-    border:5px solid #000000;
+    border:2px solid #000000;
     background-color: #ffffff;
     padding: 0;
     margin: auto;
@@ -17,25 +17,28 @@ table, th, td {
 }
 
 </style>
+
 <script src='game.js'></script>
 <script src='food.js'></script>
 <script src='gostuff.js'></script>
+
 <script>  
 
 var episode_knt = 0;
 var num_episodes = 0;
-var num_rovers = 10;
-var num_inputs = 9;
-var red_num_hidden = 18;
-var blue_num_hidden = 27;
+var num_rovers = 20;
+var num_inputs = 16;
+var red_num_hidden = 32;
+var blue_num_hidden =48;
+console.log("num_inputs",num_inputs)
+console.log("red blue num_hidden",red_num_hidden,blue_num_hidden)
 var num_outputs = 1;
 var pause = false;
-
 red_rovers = [];
 blue_rovers = [];
 
 foods = [];
-var num_foods = 40;
+var num_foods = 12;
 width = 480
 height = 300
 
@@ -60,11 +63,8 @@ function startGame() {
 <center>
 <button onclick="javascript:myGameArea.stop()">stop</button>
 <button onclick="javascript:myGameArea.start()">start</button>
-<p>
-<div id = 'comms' align='left' style="height:120px;width:400px;border:1px solid #ccc; font:12px/16px
-Georgia,Garamond,Serif;overflow:auto;">
-</div>
 </center>
+
 </body>
 </html>
 

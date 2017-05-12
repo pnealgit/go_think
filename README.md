@@ -26,4 +26,6 @@ OOOPS !! Sort is fucked up. Gotta fix that ...grr - hate select and crossover
 
 May 2, 2017 Cleaned up some code. Made select work. checked make_new_weights
 
+May 12, 2017 Still not converging. Threw out crossover. Made separate file 
+    do_updates.go for some of the code
 
