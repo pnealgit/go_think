@@ -1,9 +1,3 @@
-// Copyright 2015 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-// +build ignore
-
 package main
 
 import (
@@ -14,23 +8,10 @@ import (
 	"net/http"
         "strings"
         "math/rand"
-        "math"
         "encoding/json"
 	"github.com/gorilla/websocket"
 )
 
-type Update_record struct {
-    Color     string
-    Id        int
-    Reward    int
-    State     []float32
-}
-
-type Angle_record struct {
-    Color     string
-    Id        int
-    Angle     float32
-}
 type Team struct {
     Team_name string
     Color       string
@@ -44,15 +25,15 @@ type Team struct {
 type Rover struct {
     Genome               []float32
     Input_hidden_weights [][]float32
-    Hidden_output_weights[][]float32
+    Hidden_hidden_weights [][]float32
+    Hidden_output_weights [][]float32
+    Old_hidden_layer      []float32
     Score                int
 }
 
 var red_team Team
 var blue_team Team
 var rover Rover
-
-var update_record Update_record
 
 var addr = flag.String("addr", "localhost:8081", "http service address")
 
@@ -64,55 +45,6 @@ var upgrader = websocket.Upgrader{
     },
 }
 
-func think(update_record Update_record) float32 {
-    team := red_team
-    if update_record.Color == "blue" {
-       team = blue_team
-    }
-    //fmt.Println("raw reward ",update_record.Reward)
-
-    team.Rovers[update_record.Id].Score += update_record.Reward
-    var input_layer []float32
-    var pi float32 
-    input_layer = update_record.State
-    var ihws  [][]float32
-
-    ihws = team.Rovers[update_record.Id].Input_hidden_weights
-    hidden_layer := make_layer(input_layer,ihws)
-
-    var hows  [][]float32
-    hows = team.Rovers[update_record.Id].Hidden_output_weights
-    output_layer := make_layer(hidden_layer,hows)
-
-
-    pi = float32(math.Pi)
-    new_angle := output_layer[0] * pi * 2.0
-    return new_angle 
-} //end of think
-
-func make_layer(from_layer []float32,from_to_weight_matrix [][]float32) []float32 {
-      //from layer is 1 x c
-      //from_to_weight_matrix is c x x
-      //new_layer is 1 x x
-
-      var new_layer []float32
-      to_len := len(from_to_weight_matrix[0])
-      from_len := len(from_layer)
-
-      var sum float32
-      
-      for ia:=0;ia<to_len;ia++  {
-            sum = 0.0
-            for jb :=0;jb <from_len;jb++ {
-                sum += from_layer[jb] * from_to_weight_matrix[jb][ia]
-            }
-            fff :=  1.0/(1.0+math.Exp(-1.0*float64(sum)))
-            new_layer =  append(new_layer,float32(fff))
-        } //end of loop on i
-        return new_layer
-} //end of make_layer
-
-
 func getRandomFloat32(min float32,max float32) float32{
     return 0.0 + (rand.Float32() * (max-min)) + min
 }
@@ -122,65 +54,53 @@ func getRandomInt(min int,max int) int{
 }
 
 func select_genomes(team Team) {
+    //new_team := team
+
     sum := 0
     for ir:=0;ir<team.Num_rovers;ir++ {
         sum+= team.Rovers[ir].Score
     }
     fmt.Println(team.Team_name," sum ",sum)
-
     sort.Sort(ScoreSorter(team.Rovers))
+    fmt.Println("BEST SCORE FOR ",team.Team_name,": ",team.Rovers[0].Score)
+    fmt.Println("WRST SCORE FOR ",team.Team_name,": ",team.Rovers[team.Num_rovers-1].Score)
 
-    spot :=4
-    for isk:=spot; isk< team.Num_rovers;isk++ {
-        var new_genome  []float32
-        i1 := getRandomInt(0,spot)
-        i2 := getRandomInt(0,team.Num_rovers)
-        new_genome = crossover(team.Rovers[i1].Genome,team.Rovers[i2].Genome)
-        team.Rovers[isk].Genome = new_genome
-    }
+} //end of select
+
+
+
+func mutate_genomes(team Team) {
+    num_spots := len(team.Rovers[0].Genome)
+    for im:=4;im<team.Num_rovers;im++ {
+      team.Rovers[im].Genome = team.Rovers[0].Genome
+      for ispot:=0;ispot<num_spots;ispot++ {
+         team.Rovers[im].Genome[ispot] = float32(rand.NormFloat64()) * 
+              team.Rovers[im].Genome[ispot]
+      } //end of loop on ispot
+    } //end of loop on num_rovers
     
     for isk:=0; isk< team.Num_rovers;isk++ {
        team.Rovers[isk].Score = 0
     }
-
-} //end of select
-
-func crossover(g1 []float32,g2[]float32) ([]float32) {
-    cspot := len(g1)/2
-    var c1 []float32
-    var c2 []float32
-    c1a := g1[0:cspot]
-    c1b := g1[cspot:]
-    c2a := g2[0:cspot]
-    c2b := g2[cspot:]
-    c1 = append(c1,c1a...)
-    c1 = append(c1,c1b...)
-    c2 = append(c2,c2a...)
-    c2 = append(c2,c2b...)
-    duh := rand.Float32()
-    if duh < .5 {
-        return c1
-    } 
-    return c2
-} //end of crossover
- 
-func mutate_genomes(team Team) {
-    for im:=2;im<team.Num_rovers;im++ {
-        //everybody but top 2 get mutation Rovers 0 just to get a length
-        mspot := getRandomInt(0,len(team.Rovers[0].Genome))
-        team.Rovers[im].Genome[mspot] = getRandomFloat32(-2.0,2.0)
-    } //end of loop on num_roers
 } //end of mutate func
 
 func make_new_weights(team Team) {
-   
+
     for i := 0; i< team.Num_rovers; i++ {
+        index := 0
         var new_weights [][]float32
         new_weights = make_weight_matrix(team.Rovers[i].Genome,0,team.Num_inputs,team.Num_hidden)
         team.Rovers[i].Input_hidden_weights = new_weights
-        index :=  team.Num_inputs * team.Num_hidden
+
+        //RNN got an extra hidden layer---
+        index = team.Num_inputs * team.Num_hidden
+        team.Rovers[i].Hidden_hidden_weights = 
+           make_weight_matrix(team.Rovers[i].Genome,index,team.Num_hidden,team.Num_hidden)
+
+        index+= team.Num_hidden * team.Num_hidden
         team.Rovers[i].Hidden_output_weights = 
            make_weight_matrix(team.Rovers[i].Genome,index,team.Num_hidden,team.Num_outputs)
+
     } //end of for loop on num_rovers
 } //end of make_new_weights 
 
@@ -212,6 +132,7 @@ func make_weight_matrix(genome []float32,start_index int,from_size int,to_size i
 func make_rovers(team Team) []Rover {
 
     length_of_genome := team.Num_inputs*team.Num_hidden 
+    length_of_genome += team.Num_hidden*team.Num_hidden
     length_of_genome += team.Num_hidden*team.Num_outputs
     var rovers []Rover
 
@@ -223,16 +144,11 @@ func make_rovers(team Team) []Rover {
           genome =  append(genome,getRandomFloat32(-2.0,2.0))
         } //end of loop on length of genome
         rover.Genome = genome
- 
-        rover.Input_hidden_weights = 
-                  make_weight_matrix(rover.Genome,0,team.Num_inputs,team.Num_hidden)
-        index :=  team.Num_inputs * team.Num_hidden
-        rover.Hidden_output_weights = 
-           make_weight_matrix(rover.Genome,index,team.Num_hidden,team.Num_outputs)
         rover.Score = 0
+        for ijk :=0;ijk<team.Num_hidden;ijk++ {
+            rover.Old_hidden_layer = append(rover.Old_hidden_layer,0.0)
+        }
         rovers = append(rovers,rover)
-
-
     } //end of for loop on num_rovers
    return rovers
 } //end of make_rovers
@@ -255,48 +171,39 @@ func talk(w http.ResponseWriter, r *http.Request) {
                 junk:= string(message)
                 //fmt.Println("junk: ",junk)
                  
-                if strings.Contains(junk,"red_team") {
+                if strings.Contains(junk,"make_red_team") {
                    fmt.Println("RED TEAM!!");
                    jerr := json.Unmarshal(message,&red_team)
                    if jerr != nil {
                       fmt.Println("error on redteam unmarshal")
                    } //end of if on jerr
                    red_team.Rovers = make_rovers(red_team)
-
+                   make_new_weights(red_team)
                 }  //end of if on red
 
-                if strings.Contains(junk,"blue_team") {
+                if strings.Contains(junk,"make_blue_team") {
                    jerr := json.Unmarshal(message,&blue_team)
                    if jerr != nil {
                       fmt.Println("error on blueteam unmarshal")
                    } //end of if on jerr
                    blue_team.Rovers = make_rovers(blue_team)
+                   make_new_weights(blue_team)
 
                 }  //end of if on blue 
 
-                if strings.Contains(junk,"state") {
-                   jerr := json.Unmarshal(message,&update_record)
-                   if jerr != nil {
-                      fmt.Println("error on update unmarshal")
-                   } //end of if on jerr
-                  
-                   var angle_record Angle_record
-                   angle_record.Angle = think(update_record)
-                   angle_record.Color = update_record.Color
-                   angle_record.Id = update_record.Id
+                if strings.Contains(junk,"red_team_state") {
+                   message = do_updates(red_team,message)
+                }
 
-                   message,err = json.Marshal(angle_record)
-                   if err != nil {
-                      fmt.Println("bad angle Marshal")
-                   }
-                   
-                   err = c.WriteMessage(mt, message)
-                   if err != nil {
-                        log.Println("angle write:", err)
-                        break
-                   } //end of if on write
-                }  //end of if on state 
-
+                if strings.Contains(junk,"blue_team_state") {
+                   message = do_updates(blue_team,message)
+		   err = c.WriteMessage(mt, message)
+		   if err != nil {
+			log.Println("write:", err)
+			break
+		   } //end of if on write
+                }
+ 
                 if strings.Contains(junk,"num_episodes") {
                    fmt.Println("NUM EPISODES!!")
                    select_genomes(red_team);
@@ -323,17 +230,6 @@ func main() {
 	log.SetFlags(0)
 	http.HandleFunc("/talk", talk)
         http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-                http.ServeFile(w, r, r.URL.Path[1:])
-        })
-
-        http.HandleFunc("food.js", func(w http.ResponseWriter, r *http.Request) {
-                http.ServeFile(w, r, r.URL.Path[1:])
-        })
-        http.HandleFunc("game.js", func(w http.ResponseWriter, r *http.Request) {
-                http.ServeFile(w, r, r.URL.Path[1:])
-        })
-
-        http.HandleFunc("gostuff.js", func(w http.ResponseWriter, r *http.Request) {
                 http.ServeFile(w, r, r.URL.Path[1:])
         })
 

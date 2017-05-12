@@ -37,41 +37,25 @@ function Food(x,y) {
 
 } //end of food function  
 
-Food.prototype.make_food_cells = function (num_foods) {
-    //this will fall apart depending on 
-    // num foods and size of window
-    for(var ixc = 0;ixc<10;ixc++) {
-        cc = []; 
-        for(var ixy = 0;ixy<10;ixy++) {
-          cc[ixy] = false;
-        }
-        this.food_cells[ixc] = cc;
-    }
-    console.log('food cells', this.food_cells);
-
-} //end of make_food_cells
-    
-num_foods = 40;
- 
 function make_foods(num_foods) {
  
     x = 0;
     y = 0;
      
-    w = width;
-    h = height;
-    //divide area into 40 cells and put a food 
+    w = width-100;
+    h = height-100;
+    //divide area into 12 cells and put a food 
     // in the middle of each  cell up to the limit of numfoods
     r = 15; //radius of food
     start = (2*r)+10; //adjust for radius of food
-    deltax = (w-start) /8;
-    deltay = (h-start) /5;
+    deltax = (w-start) /4;
+    deltay = (h-start) /3;
     console.log('w,h,dx,dy',w,h,deltax,deltay);
  
     fknt = 0;
-    for(ix = 0;ix<8;ix++) {
+    for(ix = 1;ix<5;ix++) {
     px = start + (ix*deltax);
-    for(iy = 0;iy<5;iy++) {
+    for(iy = 1;iy<4;iy++) {
       py = start + (iy*deltay);
       foods[fknt] = new Food(px,py);
       fknt++;

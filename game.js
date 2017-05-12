@@ -1,4 +1,5 @@
 var ws
+var pause = false
 function WebsocketStart() {
 
     ws = new WebSocket("ws://localhost:8081/talk")
@@ -16,15 +17,18 @@ function WebsocketStart() {
 
     ws.onmessage = function(e) {
       //console.log('MESSAGE -- ',e.data);
-      n = e.data.indexOf("Angle");
+      n = e.data.indexOf("Angles");
       if (n != -1 ) {
          var response = JSON.parse(e.data)
-
-         if (response.Color == "red") {
-             red_rovers[response.Id].angle = response.Angle;
-         } else {
-             blue_rovers[response.Id].angle = response.Angle;
-         }
+         angles = response.Angle_records
+         for (var iang=0;iang < angles.length;iang++) {
+            angle = angles[iang] 
+            if (response.Color == "red") {
+             red_rovers[angle.Id].angle = angle.Angle;
+            } else {
+             red_rovers[angle.Id].angle = angle.Angle;
+            } //end of if
+          } //end of loop on iang
       } //end of found 'angle'
     } //endo of onmessage
 
@@ -59,20 +63,25 @@ function setup() {
     console.log('after making rovers');
     episode_knt = 0;
     num_episodes = 0;
-} //end of setup
 
+} //end of setup
+    
 function updateGameArea() {
-    if (episode_knt >= 300) {
+    if (pause) {
+       return
+    }
+    if (episode_knt >= 280) {
        mydata = {};
        red_sum = reset_rover_positions(red_rovers);
        blue_sum = reset_rover_positions(blue_rovers);
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);
-       num_episodes++;
        episode_knt = 0;
        console.log("red sum: ",red_sum, "blue sum: ",blue_sum);
        reset_food_positions();
-    } //end of if on episode_knt
+       num_episodes++;
+
+} //end of if on episode_knt
 
     myGameArea.clear();
     update_rovers(red_team,red_rovers);
@@ -84,8 +93,7 @@ function updateGameArea() {
 myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        console.log('in game area start');
-        this.millis = 50;  //game intervale milliseconds
+        this.millis = 75;  //game intervale milliseconds
         this.canvas.width = width;
         this.canvas.height = height;
         this.context = this.canvas.getContext("2d");
@@ -103,7 +111,7 @@ myGameArea = {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.fillStyle = "rgba(255,255,255,255)";
         this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
-    }   
+    } 
 }    //end of gamearea
 
 
