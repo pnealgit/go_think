@@ -30,8 +30,6 @@ function Food(x,y) {
      } //end of food update
 
     this.reset_position = function() {
-      //this.x = start + (ix*deltax);
-      //this.y = start + (iy*deltay);
       //this.r = 15;
     } //end of reset
 
@@ -41,25 +39,21 @@ function make_foods(num_foods) {
  
     x = 0;
     y = 0;
-     
+    centerx = width/2
+    centery = height/2
+    circ_radius = 100
+ 
     w = width-100;
     h = height-100;
-    //divide area into 12 cells and put a food 
-    // in the middle of each  cell up to the limit of numfoods
     r = 15; //radius of food
-    start = (2*r)+10; //adjust for radius of food
-    deltax = (w-start) /4;
-    deltay = (h-start) /3;
-    console.log('w,h,dx,dy',w,h,deltax,deltay);
- 
-    fknt = 0;
-    for(ix = 1;ix<5;ix++) {
-    px = start + (ix*deltax);
-    for(iy = 1;iy<4;iy++) {
-      py = start + (iy*deltay);
-      foods[fknt] = new Food(px,py);
-      fknt++;
-    }
+
+    delta_radians = (2.0*Math.PI)*(1.0/num_foods)
+    fangle = 0;
+    for (var fknt =0;fknt<num_foods;fknt++) {
+        py = centery + circ_radius*Math.sin(fangle)+Math.random()*2.0
+        px = centerx + circ_radius*Math.cos(fangle)+Math.random()*2.0
+        foods[fknt] = new Food(px,py);
+        fangle += delta_radians
     }
 }//end of function make_foods
 

@@ -16,18 +16,15 @@ function WebsocketStart() {
     }
 
     ws.onmessage = function(e) {
-      //console.log('MESSAGE -- ',e.data);
       n = e.data.indexOf("Angles");
       if (n != -1 ) {
          var response = JSON.parse(e.data)
          angles = response.Angle_records
          for (var iang=0;iang < angles.length;iang++) {
-            angle = angles[iang] 
-            if (response.Color == "red") {
-             red_rovers[angle.Id].angle = angle.Angle;
-            } else {
-             red_rovers[angle.Id].angle = angle.Angle;
-            } //end of if
+            angle_rec = angles[iang] 
+            my_angle = Math.PI/4 * angle_rec.Angle 
+              
+             rovers[angle_rec.Id].angle = my_angle;
           } //end of loop on iang
       } //end of found 'angle'
     } //endo of onmessage
@@ -54,12 +51,12 @@ senddata = function(data) {
 function setup() {
     make_foods(num_foods);
     reset_food_positions();
-    red_team = new Team('red',num_rovers,num_inputs,red_num_hidden,num_outputs);
-    senddata(red_team);
-    blue_team = new Team('blue',num_rovers,num_inputs,blue_num_hidden,num_outputs);
-    senddata(blue_team);
-    red_rovers = make_rovers(red_team);
-    blue_rovers = make_rovers(blue_team);
+    team = new Team(num_rovers,num_inputs,num_hidden,num_outputs);
+    console.log("TEAM: ",team)
+    senddata(team);
+    rovers = make_rovers(team);
+console.log("rovers: ",rovers)
+
     console.log('after making rovers');
     episode_knt = 0;
     num_episodes = 0;
@@ -72,20 +69,17 @@ function updateGameArea() {
     }
     if (episode_knt >= 280) {
        mydata = {};
-       red_sum = reset_rover_positions(red_rovers);
-       blue_sum = reset_rover_positions(blue_rovers);
+       reset_rover_positions(rovers);
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);
        episode_knt = 0;
-       console.log("red sum: ",red_sum, "blue sum: ",blue_sum);
        reset_food_positions();
        num_episodes++;
 
 } //end of if on episode_knt
 
     myGameArea.clear();
-    update_rovers(red_team,red_rovers);
-    update_rovers(blue_team,blue_rovers);
+    update_rovers(team,rovers);
     update_foods();
     episode_knt+= 1;
 } //end of updateGameArea
