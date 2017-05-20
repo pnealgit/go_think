@@ -29,3 +29,5 @@ May 2, 2017 Cleaned up some code. Made select work. checked make_new_weights
 May 12, 2017 Still not converging. Threw out crossover. Made separate file 
     do_updates.go for some of the code
 
+May 20, 2017 Did a lot of work. Move from a GA to the cross-entropy method. Pretty printed the go files. Messed with the rewards. Made the food a circle.
+
