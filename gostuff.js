@@ -31,7 +31,6 @@ function Rover(id) {
     this.epys = [];
     this.sensor_data = [];
     this.state = [];
-    this.old_state = {};
     this.reward = 0.0;
     this.angle = 0.0
     this.last_food_x = 0.0;
@@ -148,6 +147,8 @@ function update_rovers(team, rovers) {
         rrr = rovers[i].get_reward();
         rovers[i].state.push(rovers[i].last_food_x)
         rovers[i].state.push(rovers[i].last_food_y)
+        rovers[i].state.push(rovers[i].x/width)
+        rovers[i].state.push(rovers[i].y/height)
 
         my_data['state'] = rovers[i].state
         my_data['reward'] = rrr
@@ -183,13 +184,26 @@ Rover.prototype.get_reward = function() {
     }
     //end of loop on food
 
+    //if hit another rover
+    test =  this.r*2.0;
+    for (var rk=0;rk<rovers.length;rk++) {
+       if (rk != this.id) {
+        dist = Math.hypot((rovers[rk].x - this.x), (rovers[rk].y - this.y));
+        if (dist <= test) {
+            new_reward -= 1;
+            no_change = false;
+        }
+       } //end of if on not self
+     } //end of loop on other rovers
+            
+
     //now for borders
     if (this.x > myGameArea.canvas.width - 5 || this.x < 5) {
-        if (this.velocity > 0.0) {
+        //if (this.velocity > 0.0) {
             new_reward += -2;
             no_change = false;
             this.velocity = 0.0;
-        }
+        //}
     }
     if (this.y > myGameArea.canvas.height - 2 || this.y < 5) {
         //if (this.velocity > 0.0) {
@@ -200,7 +214,8 @@ Rover.prototype.get_reward = function() {
     }
     //end of if
 
-    if (no_change) {//    new_reward+= -1
+    if (no_change) {
+        new_reward+= 1;
     }
     return new_reward;
 }

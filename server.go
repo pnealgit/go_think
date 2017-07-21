@@ -69,7 +69,7 @@ func select_genomes(team Team) {
 		team.Rovers[ir].Score = 0
 	}
 
-	elite_cut := int(float32(len(team.Rovers)) * .2)
+	elite_cut := int(float32(len(team.Rovers)) * .3)
 	fmt.Println("elite cut is : ", elite_cut)
 
 	glen := len(team.Rovers[0].Genome)
