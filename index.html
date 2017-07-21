@@ -27,12 +27,13 @@ table, th, td {
 var episode_knt = 0;
 var num_episodes = 0;
 var num_rovers = 30;
-var num_inputs = 21;
-var num_hidden = 38;
+//3 sensors * 2  then 2 last food 2 present position 
+var num_inputs = 20;
+var num_hidden = 80;
+var num_outputs = 3;
+
 console.log("num_roverss",num_rovers)
-console.log("num_inputs",num_inputs)
-console.log("num_hidden",num_hidden)
-var num_outputs = 8;
+console.log("num_inputs",num_inputs," num hidden ",num_hidden, "num outputs ",num_outputs)
 var pause = false;
 rovers = [];
 foods = [];

@@ -1,5 +1,42 @@
 var ws
 var pause = false
+function get_new_radians(angle_rec) {
+    //angle_rec.Angle is actually an index
+
+    var nn_index = angle_rec.Angle
+    var id       = angle_rec.Id;
+    var rover_angle = rovers[id].angle;
+    var rover_delta_radians = rovers[id].delta_radians;
+    var cr = 2.0*Math.PI;
+    var delta_rad = 0;
+
+    if (nn_index == 0) {
+        //do nothing;
+        delta_rad = 0;
+    }
+
+    if (nn_index == 1) {
+        //do go left
+        delta_rad = rover_delta_radians;
+    }
+    if (nn_index == 2) {
+        //do go right
+        delta_rad = -1.0 * rover_delta_radians;
+    }
+
+    new_angle = rover_angle + delta_rad;
+//console.log("NN",nn_index,"rover angle: ",rover_angle,"  delta_rad",delta_rad," new angle ",new_angle);
+
+    if(new_angle > cr) {
+       new_angle = new_angle - cr;
+    }
+    if(new_angle < 0) {
+      new_angle = (cr - (Math.abs(new_angle) % cr) )
+    }
+    //console.log("AFTER NEW ANGLE: ",new_angle)
+    return new_angle;
+} //end of function
+
 function WebsocketStart() {
 
     ws = new WebSocket("ws://localhost:8081/talk")
@@ -22,9 +59,7 @@ function WebsocketStart() {
          angles = response.Angle_records
          for (var iang=0;iang < angles.length;iang++) {
             angle_rec = angles[iang] 
-            my_angle = Math.PI/4 * angle_rec.Angle 
-              
-             rovers[angle_rec.Id].angle = my_angle;
+            rovers[angle_rec.Id].angle = get_new_radians(angle_rec);
           } //end of loop on iang
       } //end of found 'angle'
     } //endo of onmessage
@@ -67,7 +102,7 @@ function updateGameArea() {
     if (pause) {
        return
     }
-    if (episode_knt >= 280) {
+    if (episode_knt >= 580) {
        mydata = {};
        reset_rover_positions(rovers);
        mydata['num_episodes'] =  num_episodes;
