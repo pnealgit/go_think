@@ -21,19 +21,18 @@ table, th, td {
 <script src='game.js'></script>
 <script src='food.js'></script>
 <script src='gostuff.js'></script>
+<script src='sensors.js'></script>
 
 <script>  
 
 var episode_knt = 0;
 var num_episodes = 0;
 var num_rovers = 30;
-//3 sensors * 2  then 2 last food 2 present position 
 var num_inputs = 20;
-var num_hidden = 80;
-var num_outputs = 3;
+var num_hidden = 20;
+var num_outputs = 8;
 
 console.log("num_roverss",num_rovers)
-console.log("num_inputs",num_inputs," num hidden ",num_hidden, "num outputs ",num_outputs)
 var pause = false;
 rovers = [];
 foods = [];
