@@ -31,3 +31,5 @@ May 12, 2017 Still not converging. Threw out crossover. Made separate file
 
 May 20, 2017 Did a lot of work. Move from a GA to the cross-entropy method. Pretty printed the go files. Messed with the rewards. Made the food a circle.
 
+August 20, 2017 Broke out some code into new modules
+

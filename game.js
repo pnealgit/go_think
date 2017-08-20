@@ -103,7 +103,7 @@ function updateGameArea() {
        return
     }
     if (episode_knt >= 580) {
-       mydata = {};
+       var mydata = {};
        reset_rover_positions(rovers);
        mydata['num_episodes'] =  num_episodes;
        senddata(mydata);

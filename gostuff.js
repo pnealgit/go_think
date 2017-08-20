@@ -1,4 +1,4 @@
-var Team = function(num_rovers, num_inputs,num_hidden,num_outputs  ) {
+var Team = function(num_rovers,num_inputs,num_hidden,num_outputs) {
     this.team_name = "make_team";
     this.num_rovers = num_rovers;
     this.num_inputs = num_inputs;
@@ -22,17 +22,16 @@ function Rover(id) {
     this.x = width / 2 + getRandomInt(-5, 5);
     this.y = height / 2 + getRandomInt(-5, 5);
     this.r = 10;
-    this.num_sensors = 3;
+    this.sensors = [];
+    this.num_antennae = 3;
+    this.num_sensors_per_antenna = 2;
+    this.num_sensors = this.num_antennae * this.num_sensors_per_antenna;
     this.velocity = 2.0;
-    this.sensor_length = this.r + 10
+    this.antenna_length =  10
     //this.delta_radians = (2.0 * Math.PI) * (1.0 / this.num_sensors)
     this.delta_radians =  Math.PI/4.0
 
-    this.epxs = [];
-    this.epys = [];
-    this.sensor_data = [];
     this.state = [];
-    this.last_state = [];
     this.reward = 0.0;
     this.angle = 2.0*Math.PI * Math.random();
     this.last_food_x = 0.0;
@@ -40,6 +39,7 @@ function Rover(id) {
 
     this.dx = this.velocity * Math.cos(this.angle);
     this.dy = this.velocity * Math.sin(this.angle);
+    this.make_sensors();
 
     this.move = function() {
         this.dx = this.velocity * Math.cos(this.angle)
@@ -58,55 +58,19 @@ function Rover(id) {
         ctx.beginPath();
         ctx.strokeStyle = '#000000';
         tangle = this.angle- this.delta_radians;
-        for (s = 0; s < this.num_sensors; s++) {
-            y2 = this.sensor_length * Math.sin(tangle)
-            x2 = this.sensor_length * Math.cos(tangle)
-            ctx.moveTo(this.x, this.y)
-            this.epxs[s] = this.x + x2
-            this.epys[s] = this.y + y2
-            ctx.lineTo(this.epxs[s], this.epys[s])
-            tangle += this.delta_radians;
+       
+        this.set_sensor_positions();
+	for (var s=0;s<this.num_antennae;s++) {
+            ctx.moveTo(this.x,this.y);
+            ctx.lineTo(this.sensors[s].xpos, this.sensors[s].ypos)
         }
         //end of loop on sensors
         ctx.stroke();
         ctx.closePath();
     }
     //end of rover draw
-
 }
 //end of Rover function
-
-Rover.prototype.get_sensor_data = function() {
-    food_sensed = [0, 0, 0 ]
-    wall_sensed = [0, 0, 0 ]
-
-    //food 
-    for (s = 0; s < this.num_sensors; s++) {
-        for (i = 0; i < num_foods; i++) {
-            f = foods[i];
-            dist = Math.hypot((f.x - this.epxs[s]), (f.y - this.epys[s]));
-            test = f.r;
-            if (dist <= test) {
-                food_sensed[s] = 1;
-            }
-        }
-        //end of loop on food
-    }
-    //end of loop on sensors
-
-    //now for borders
-    for (s = 0; s < this.num_sensors; s++) {
-        if ((this.epxs[s] > myGameArea.canvas.width - 2 || this.epxs[s] < 5) || (this.epys[s] > myGameArea.canvas.height - 2 || this.epys[s] < 5)) {
-            wall_sensed[s] = 1;
-        }
-    }
-    //end of loop on sensors
-    this.last_state = this.state;
-    this.state = food_sensed.concat(wall_sensed);
-    this.state.push(this.x/width)
-    this.state.push(this.y/height)
-}
-//end of get_sensor_data function
 
 function update_rovers(team, rovers) {
 
@@ -122,26 +86,12 @@ function update_rovers(team, rovers) {
         my_data['id'] = i;
         my_data['reward'] = 0;
 
-        rovers[i].get_sensor_data();
-
-        //get a little reward for seeing food
-        //for (var isn = 0; isn < rovers[i].num_sensors; isn++) {
-         //   my_data['reward'] += rovers[i].state[isn];
-        //}
-
+        rovers[i].get_sensor_data(i);
         rrr = rovers[i].get_reward();
-        rovers[i].state.push(rovers[i].last_food_x)
-        rovers[i].state.push(rovers[i].last_food_y)
-
-        if(rovers[i].last_state.length > 0) {
-            my_data['state'] = rovers[i].state.concat(rovers[i].last_state)
-        } else {
-            my_data['state'] = rovers[i].state.concat(rovers[i].state)
-        }
-        
+        my_data['state'] = rovers[i].state;
         my_data['reward'] = rrr
 
-        //console.log('my_data',my_data);
+        //console.log('my_data state',my_data.state);
 
         all_recs.push(my_data);
         rovers[i].reward += my_data['reward'];
@@ -156,6 +106,11 @@ function update_rovers(team, rovers) {
 //end of function 
 
 Rover.prototype.get_reward = function() {
+
+    //first num_sensors are food
+    //second num_sensors are other rovers
+    //third num_sensors are walls
+
     //food
     no_change = true;
     new_reward = 0;
@@ -165,24 +120,22 @@ Rover.prototype.get_reward = function() {
         if (dist <= test) {
             new_reward += 50;
             no_change = false;
-            this.last_food_x = this.x / width
-            this.last_food_y = this.y / height
         }
         //end of if
     }
     //end of loop on food
 
     //if hit another rover
-    //test =  this.r*2.0;
-    //for (var rk=0;rk<rovers.length;rk++) {
-     //  if (rk != this.id) {
-      //  dist = Math.hypot((rovers[rk].x - this.x), (rovers[rk].y - this.y));
-       // if (dist <= test) {
-        //    new_reward -= 1;
-         //   no_change = false;
-        //}
-       //} //end of if on not self
-     //} //end of loop on other rovers
+      test =  this.r*2.0;
+      for (var rk=0;rk<rovers.length;rk++) {
+       if (rk != this.id) {
+        dist = Math.hypot((rovers[rk].x - this.x), (rovers[rk].y - this.y));
+        if (dist <= test) {
+            new_reward -= 1;
+            no_change = false;
+        }
+       } //end of if on not self
+     } //end of loop on other rovers
             
 
     //now for borders
